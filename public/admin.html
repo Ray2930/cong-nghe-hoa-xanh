@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Quản trị — CÔNG NGHỆ HÓA XANH</title>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--forest:#1f4d36;--leaf:#4caf6d;--mint:#dff3e6;--cream:#fbf8ef;--line:#dfe9e1;--muted:#5f7468;--red:#c0392b}
+*{box-sizing:border-box}body{margin:0;font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:#1c2b22;font-size:16px}
+a{color:var(--forest)}h1,h2,h3{color:var(--forest);margin:0 0 .5em}
+.top{background:var(--forest);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.top b{letter-spacing:.04em}.top .sp{flex:1}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}.tabs button{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:999px;padding:8px 16px;font:inherit;font-weight:600;cursor:pointer}
+.tabs button.on{background:#fff;color:var(--forest)}
+main{max-width:1100px;margin:0 auto;padding:24px 20px 80px}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:18px}
+.btn{background:var(--forest);color:#fff;border:0;border-radius:999px;padding:10px 20px;font:inherit;font-weight:700;cursor:pointer}
+.btn:hover{background:var(--leaf)}.btn.sec{background:#fff;color:var(--forest);border:2px solid var(--forest)}.btn.del{background:var(--red)}
+.btn.sm{padding:6px 14px;font-size:.88rem}
+label{display:block;font-weight:700;font-size:.9rem;margin:12px 0 4px;color:var(--forest)}
+input[type=text],input[type=password],input[type=number],input[type=date],select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;font:inherit;background:#fff}
+textarea{min-height:90px;resize:vertical}
+input:focus,textarea,select:focus{outline:2px solid var(--mint)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+table{width:100%;border-collapse:collapse}td,th{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:.85rem;color:var(--muted)}
+td img.th{width:48px;height:48px;object-fit:contain;background:var(--mint);border-radius:10px}
+.msg{padding:10px 14px;border-radius:12px;margin-bottom:14px;font-weight:600}.msg.ok{background:var(--mint);color:var(--forest)}.msg.err{background:#fde8e5;color:var(--red)}
+.login{max-width:380px;margin:12vh auto}
+.pill{display:inline-block;background:var(--mint);border-radius:999px;padding:2px 10px;font-size:.8rem;font-weight:700}
+.imgs{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}.imgs div{position:relative}.imgs img{width:84px;height:84px;object-fit:contain;background:var(--mint);border-radius:12px}
+.imgs button{position:absolute;top:-6px;right:-6px;border:0;background:var(--red);color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer}
+.qrbox{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.qrbox img{width:170px;height:170px;border:1px solid var(--line);border-radius:12px}
+.linkbox{word-break:break-all;background:var(--mint);padding:8px 12px;border-radius:10px;font-weight:600}
+.hint{color:var(--muted);font-size:.85rem}
+.swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.swatches input[type=color]{width:100%;height:44px;border:1px solid var(--line);border-radius:10px;padding:2px;background:#fff}
+@media (max-width:760px){.row,.row3,.swatches{grid-template-columns:1fr}}
+@media print{.top,.noprint{display:none}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const root = $('#root');
+let tab = 'products', DB = { products: [], posts: [], settings: null }, edit = null, msg = null;
+const CATS = { 'rua-tay': 'Nước rửa tay', 'rua-chen': 'Nước rửa chén', 'giat': 'Nước giặt', 'lau-san': 'Nước lau sàn' };
+
+async function call(method, url, body) {
+  const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  const data = await r.json().catch(() => ({}));
+  if (r.status === 401 && !url.endsWith('/login')) { renderLogin(); throw new Error('Phiên đăng nhập đã hết hạn'); }
+  if (!r.ok) throw new Error(data.error || 'Lỗi');
+  return data;
+}
+async function load() {
+  const [site, products, posts] = await Promise.all([fetch('/api/site').then(r => r.json()), fetch('/api/products').then(r => r.json()), fetch('/api/posts').then(r => r.json())]);
+  DB = { settings: site.settings, products, posts };
+}
+function flash(text, ok = true) { msg = { text, ok }; }
+function msgHtml() { const m = msg; msg = null; return m ? `<div class="msg ${m.ok ? 'ok' : 'err'}">${esc(m.text)}</div>` : ''; }
+
+// ---------- login ----------
+function renderLogin(err) {
+  root.innerHTML = `<div class="login card"><h2>Đăng nhập quản trị</h2><p class="hint">CÔNG NGHỆ HÓA XANH</p>
+  ${err ? `<div class="msg err">${esc(err)}</div>` : ''}
+  <form id="lf"><label>Tên đăng nhập</label><input type="text" id="u" autocomplete="username" required>
+  <label>Mật khẩu</label><input type="password" id="p" autocomplete="current-password" required>
+  <p><button class="btn" style="width:100%">Đăng nhập</button></p></form></div>`;
+  $('#lf').onsubmit = async e => {
+    e.preventDefault();
+    try { await call('POST', '/api/admin/login', { user: $('#u').value, password: $('#p').value }); await boot(); }
+    catch (x) { renderLogin(x.message); }
+  };
+}
+
+// ---------- shell ----------
+function shell(inner) {
+  root.innerHTML = `<div class="top"><b>CÔNG NGHỆ HÓA XANH · Quản trị</b>
+    <div class="tabs">${[['products', 'Sản phẩm'], ['posts', 'Cẩm nang'], ['settings', 'Giao diện'], ['account', 'Tài khoản']].map(([k, v]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${v}</button>`).join('')}</div>
+    <span class="sp"></span><a href="/" target="_blank" style="color:#bfe6cc">Xem website ↗</a><button class="btn sec sm" id="lo">Đăng xuất</button></div>
+    <main>${msgHtml()}${inner}</main>`;
+  root.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; edit = null; render(); });
+  $('#lo').onclick = async () => { await call('POST', '/api/admin/logout'); renderLogin(); };
+}
+function render() {
+  if (tab === 'products') return edit ? productForm() : productList();
+  if (tab === 'posts') return edit ? postForm() : postList();
+  if (tab === 'settings') return settingsForm();
+  return accountForm();
+}
+async function refresh(text, ok = true) { await load(); flash(text, ok); render(); }
+
+// ---------- helpers ----------
+const lines = a => (a || []).join('\n');
+const split = s => String(s || '').split('\n').map(x => x.trim()).filter(Boolean);
+const g = id => $('#' + id).value;
+async function uploadFile(file) {
+  if (!file) return null;
+  const dataUrl = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(file); });
+  return (await call('POST', '/api/admin/upload', { dataUrl })).url;
+}
+function i18nField(id, label, v, ta) {
+  v = v || { vi: '', en: '' };
+  const f = (lng, val) => ta ? `<textarea id="${id}_${lng}">${esc(val)}</textarea>` : `<input type="text" id="${id}_${lng}" value="${esc(val)}">`;
+  return `<div class="row"><div><label>${label} (VI)</label>${f('vi', v.vi)}</div><div><label>${label} (EN)</label>${f('en', v.en)}</div></div>`;
+}
+const gi = id => ({ vi: g(id + '_vi'), en: g(id + '_en') });
+function imagesBlock(list) {
+  return `<label>Hình ảnh (ảnh đầu tiên là ảnh đại diện)</label><div class="imgs" id="imgs">${list.map((u, i) => `<div><img src="${esc(u)}"><button type="button" data-rm="${i}" title="Xóa">×</button></div>`).join('')}</div>
+  <input type="file" id="imgfile" accept="image/*" multiple><p class="hint">Hoặc dán đường dẫn ảnh (mỗi dòng một link):</p><textarea id="imgurls" rows="2">${esc(lines(list))}</textarea>`;
+}
+function bindImages(list, onChange) {
+  const rerender = () => { $('#imgs').innerHTML = list.map((u, i) => `<div><img src="${esc(u)}"><button type="button" data-rm="${i}">×</button></div>`).join(''); $('#imgurls').value = lines(list); bindRm(); };
+  const bindRm = () => document.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { list.splice(+b.dataset.rm, 1); rerender(); });
+  bindRm();
+  $('#imgurls').onchange = () => { list.length = 0; list.push(...split($('#imgurls').value)); rerender(); };
+  $('#imgfile').onchange = async e => {
+    try { for (const f of e.target.files) list.push(await uploadFile(f)); rerender(); } catch (x) { alert(x.message); }
+  };
+}
+
+// ---------- products ----------
+function productList() {
+  const rows = DB.products.map(p => `<tr><td><img class="th" src="${esc(p.images[0] || '')}"></td>
+    <td><b>${esc(p.name.vi)}</b><br><span class="hint">/san-pham/${esc(p.slug)}</span></td><td><span class="pill">${esc(CATS[p.category])}</span>${p.parent ? `<br><span class="hint">thuộc: ${esc(p.parent)}</span>` : ''}</td>
+    <td style="white-space:nowrap"><button class="btn sm sec" data-e="${esc(p.slug)}">Sửa / QR</button> <button class="btn sm del" data-d="${esc(p.slug)}">Xóa</button></td></tr>`).join('');
+  shell(`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h2 style="margin:0">Sản phẩm (${DB.products.length})</h2><button class="btn" id="add">+ Thêm sản phẩm</button></div>
+    <p class="hint">Mỗi sản phẩm có một đường link riêng (slug) và một mã QR riêng. Không thể tạo hai sản phẩm trùng link.</p>
+    <table><tr><th></th><th>Sản phẩm</th><th>Nhóm</th><th></th></tr>${rows}</table></div>`);
+  $('#add').onclick = () => { edit = { _new: true, slug: '', category: 'rua-tay', parent: '', featured: false, order: 100, swatch: '', name: {}, tagline: {}, description: {}, usage: {}, storage: {}, ingredients: {}, benefits: { vi: [], en: [] }, specs: [], hashtags: [], images: [] }; render(); };
+  document.querySelectorAll('[data-e]').forEach(b => b.onclick = () => { edit = JSON.parse(JSON.stringify(DB.products.find(p => p.slug === b.dataset.e))); edit._orig = edit.slug; render(); });
+  document.querySelectorAll('[data-d]').forEach(b => b.onclick = async () => {
+    if (!confirm('Xóa sản phẩm này? Mã QR đã in sẽ không còn hoạt động.')) return;
+    try { await call('DELETE', '/api/admin/products/' + b.dataset.d); await refresh('Đã xóa sản phẩm'); } catch (x) { flash(x.message, false); render(); }
+  });
+}
+function productForm() {
+  const p = edit, imgs = p.images.slice();
+  const specsTxt = p.specs.map(s => [s.label.vi, s.label.en, s.value.vi, s.value.en].join(' | ')).join('\n');
+  const link = location.origin + '/san-pham/' + p.slug;
+  shell(`<div class="card"><h2>${p._new ? 'Thêm sản phẩm' : 'Sửa: ' + esc(p.name.vi)}</h2>
+  ${p._new ? '' : `<div class="qrbox noprint"><img src="/api/qr/${esc(p._orig)}.png?size=400&t=${Date.now()}" alt="QR"><div><b>Mã QR của sản phẩm</b><div class="linkbox">${esc(link)}</div>
+    <p><a class="btn sm" href="/api/qr/${esc(p._orig)}.png?size=1024&download=1">Tải PNG</a> <a class="btn sm sec" href="/api/qr/${esc(p._orig)}.svg" download="qr-${esc(p._orig)}.svg">Tải SVG</a> <a class="btn sm sec" target="_blank" href="${esc(link)}">Mở trang ↗</a></p>
+    <p class="hint">QR dẫn tới đường link trên. Nếu bạn đổi slug, hãy tải và in lại mã QR mới.</p></div></div>`}
+  <div class="row3"><div><label>Đường link (slug)</label><input type="text" id="slug" value="${esc(p.slug)}" placeholder="tu-dong-tu-ten"><span class="hint">chữ thường, số, gạch ngang</span></div>
+  <div><label>Nhóm</label><select id="category">${Object.entries(CATS).map(([k, v]) => `<option value="${k}" ${p.category === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+  <div><label>Thuộc sản phẩm chính (nếu là phân loại/hương)</label><select id="parent"><option value="">— Sản phẩm chính —</option>${DB.products.filter(x => !x.parent && x.slug !== p._orig).map(x => `<option value="${esc(x.slug)}" ${p.parent === x.slug ? 'selected' : ''}>${esc(x.name.vi)}</option>`).join('')}</select></div></div>
+  ${i18nField('name', 'Tên sản phẩm', p.name)}${i18nField('tagline', 'Mô tả ngắn', p.tagline)}${i18nField('description', 'Mô tả sản phẩm', p.description, true)}
+  <div class="row"><div><label>Công dụng — VI (mỗi dòng một ý)</label><textarea id="ben_vi">${esc(lines(p.benefits.vi))}</textarea></div><div><label>Benefits — EN (one per line)</label><textarea id="ben_en">${esc(lines(p.benefits.en))}</textarea></div></div>
+  ${i18nField('usage', 'Hướng dẫn sử dụng', p.usage, true)}${i18nField('ingredients', 'Thành phần', p.ingredients, true)}${i18nField('storage', 'Bảo quản', p.storage, true)}
+  <label>Thông số (mỗi dòng: nhãn VI | nhãn EN | giá trị VI | giá trị EN)</label><textarea id="specs">${esc(specsTxt)}</textarea>
+  <div class="row3"><div><label>Hashtag (cách nhau bằng dấu phẩy)</label><input type="text" id="hashtags" value="${esc(p.hashtags.join(', '))}"></div>
+  <div><label>Thứ tự hiển thị</label><input type="number" id="order" value="${esc(p.order)}"></div><div><label>Màu đại diện (hương)</label><input type="text" id="swatch" value="${esc(p.swatch)}" placeholder="#a98fd1"></div></div>
+  ${imagesBlock(imgs)}
+  <p style="margin-top:20px"><button class="btn" id="save">Lưu sản phẩm</button> <button class="btn sec" id="cancel">Hủy</button></p></div>`);
+  bindImages(imgs);
+  $('#cancel').onclick = () => { edit = null; render(); };
+  $('#save').onclick = async () => {
+    const body = { slug: g('slug'), category: g('category'), parent: g('parent'), order: +g('order'), swatch: g('swatch'), featured: p.featured,
+      name: gi('name'), tagline: gi('tagline'), description: gi('description'), usage: gi('usage'), ingredients: gi('ingredients'), storage: gi('storage'),
+      benefits: { vi: split(g('ben_vi')), en: split(g('ben_en')) },
+      specs: split(g('specs')).map(l => { const [a, b, c, d] = l.split('|').map(x => x.trim()); return { label: { vi: a || '', en: b || a || '' }, value: { vi: c || '', en: d || c || '' } }; }),
+      hashtags: g('hashtags').split(',').map(x => x.trim()).filter(Boolean), images: imgs };
+    try {
+      const saved = p._new ? await call('POST', '/api/admin/products', body) : await call('PUT', '/api/admin/products/' + p._orig, body);
+      edit = null; await refresh('Đã lưu sản phẩm: ' + saved.slug);
+    } catch (x) { alert(x.message); }
+  };
+}
+
+// ---------- posts ----------
+function postList() {
+  shell(`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Cẩm nang sống xanh (${DB.posts.length})</h2><button class="btn" id="add">+ Đăng bài mới</button></div>
+  <table><tr><th></th><th>Bài viết</th><th>Ngày</th><th></th></tr>${DB.posts.map(p => `<tr><td><img class="th" src="${esc(p.image)}"></td><td><b>${esc(p.title.vi)}</b><br><span class="hint">/cam-nang/${esc(p.slug)}</span></td><td>${esc(p.date)}</td>
+  <td style="white-space:nowrap"><button class="btn sm sec" data-e="${esc(p.slug)}">Sửa</button> <button class="btn sm del" data-d="${esc(p.slug)}">Xóa</button></td></tr>`).join('')}</table></div>`);
+  $('#add').onclick = () => { edit = { _new: true, slug: '', title: {}, excerpt: {}, body: {}, image: '', date: new Date().toISOString().slice(0, 10), hashtags: [] }; render(); };
+  document.querySelectorAll('[data-e]').forEach(b => b.onclick = () => { edit = JSON.parse(JSON.stringify(DB.posts.find(p => p.slug === b.dataset.e))); edit._orig = edit.slug; render(); });
+  document.querySelectorAll('[data-d]').forEach(b => b.onclick = async () => { if (!confirm('Xóa bài viết này?')) return; try { await call('DELETE', '/api/admin/posts/' + b.dataset.d); await refresh('Đã xóa bài viết'); } catch (x) { alert(x.message); } });
+}
+function postForm() {
+  const p = edit, imgs = p.image ? [p.image] : [];
+  shell(`<div class="card"><h2>${p._new ? 'Đăng bài mới' : 'Sửa bài viết'}</h2>
+  <div class="row"><div><label>Đường link (slug)</label><input type="text" id="slug" value="${esc(p.slug)}" placeholder="tu-dong-tu-tieu-de"></div><div><label>Ngày đăng</label><input type="date" id="date" value="${esc(p.date)}"></div></div>
+  ${i18nField('title', 'Tiêu đề', p.title)}${i18nField('excerpt', 'Tóm tắt', p.excerpt)}${i18nField('body', 'Nội dung (xuống dòng 2 lần để tách đoạn)', p.body, true)}
+  <label>Hashtag (cách nhau bằng dấu phẩy)</label><input type="text" id="hashtags" value="${esc(p.hashtags.join(', '))}">
+  ${imagesBlock(imgs).replace('multiple', '')}
+  <p style="margin-top:20px"><button class="btn" id="save">Lưu bài viết</button> <button class="btn sec" id="cancel">Hủy</button></p></div>`);
+  document.querySelectorAll('#body_vi,#body_en').forEach(t => t.style.minHeight = '220px');
+  bindImages(imgs);
+  $('#cancel').onclick = () => { edit = null; render(); };
+  $('#save').onclick = async () => {
+    const body = { slug: g('slug'), date: g('date'), title: gi('title'), excerpt: gi('excerpt'), body: gi('body'), image: imgs[imgs.length - 1] || '', hashtags: g('hashtags').split(',').map(x => x.trim()).filter(Boolean) };
+    try { p._new ? await call('POST', '/api/admin/posts', body) : await call('PUT', '/api/admin/posts/' + p._orig, body); edit = null; await refresh('Đã lưu bài viết'); } catch (x) { alert(x.message); }
+  };
+}
+
+// ---------- settings ----------
+function settingsForm() {
+  const s = DB.settings, c = s.colors;
+  shell(`<div class="card"><h2>Banner & tone màu</h2>
+  <label>Hình Banner Hero</label><img id="hprev" src="${esc(s.heroImage)}" style="max-width:420px;width:100%;border-radius:14px;border:1px solid var(--line)"><br>
+  <input type="file" id="hfile" accept="image/*"><p class="hint">Hoặc dán link ảnh:</p><input type="text" id="heroImage" value="${esc(s.heroImage)}">
+  <label>Hình minh họa phần Giới thiệu</label><input type="text" id="aboutImage" value="${esc(s.aboutImage)}"><input type="file" id="afile" accept="image/*" style="margin-top:8px">
+  ${i18nField('heroTitle', 'Slogan Hero', s.heroTitle)}${i18nField('heroDesc', 'Mô tả ngắn', s.heroDesc, true)}
+  <label>Tone màu chủ đạo (CSS)</label><div class="swatches">
+   ${[['forest', 'Xanh rừng đậm', c.forest], ['leaf', 'Xanh lá', c.leaf], ['mint', 'Xanh mint pastel', c.mint], ['cream', 'Trắng kem', c.cream]].map(([k, n, v]) => `<div><span class="hint">${n}</span><input type="color" id="c_${k}" value="${esc(v)}"></div>`).join('')}</div>
+  <p style="margin-top:20px"><button class="btn" id="save">Lưu giao diện</button></p></div>`);
+  $('#hfile').onchange = async e => { try { const u = await uploadFile(e.target.files[0]); $('#heroImage').value = u; $('#hprev').src = u; } catch (x) { alert(x.message); } };
+  $('#afile').onchange = async e => { try { $('#aboutImage').value = await uploadFile(e.target.files[0]); } catch (x) { alert(x.message); } };
+  $('#save').onclick = async () => {
+    try { await call('PUT', '/api/admin/settings', { heroImage: g('heroImage'), aboutImage: g('aboutImage'), heroTitle: gi('heroTitle'), heroDesc: gi('heroDesc'), colors: { forest: g('c_forest'), leaf: g('c_leaf'), mint: g('c_mint'), cream: g('c_cream') } }); await refresh('Đã lưu giao diện'); }
+    catch (x) { alert(x.message); }
+  };
+}
+
+// ---------- account ----------
+function accountForm() {
+  shell(`<div class="card" style="max-width:480px"><h2>Đổi mật khẩu</h2>
+  <label>Mật khẩu hiện tại</label><input type="password" id="cur" autocomplete="current-password">
+  <label>Mật khẩu mới (tối thiểu 8 ký tự)</label><input type="password" id="nw" autocomplete="new-password">
+  <p><button class="btn" id="save">Đổi mật khẩu</button></p></div>`);
+  $('#save').onclick = async () => { try { await call('POST', '/api/admin/password', { current: g('cur'), next: g('nw') }); flash('Đã đổi mật khẩu'); accountForm(); } catch (x) { alert(x.message); } };
+}
+
+async function boot() {
+  try { await call('GET', '/api/admin/me'); await load(); render(); } catch { renderLogin(); }
+}
+boot();
+</script>
+</body>
+</html>

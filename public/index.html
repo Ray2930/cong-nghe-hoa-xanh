@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CÔNG NGHỆ HÓA XANH</title>
+<meta name="description" content="Công Nghệ Hóa Xanh – giải pháp chất tẩy rửa an toàn cho làn da và thân thiện với môi trường.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap bar">
+    <a href="/" class="logo" data-link aria-label="Công Nghệ Hóa Xanh">
+      <svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="var(--leaf)"/><path d="M12 27c0-9 6-14 17-14 0 10-5 16-14 16-1.2 0-2-.5-3-2z" fill="#fff"/><path d="M13 28c4-4 7-7 12-10" stroke="var(--leaf)" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+      <span>CÔNG NGHỆ <b>HÓA XANH</b></span>
+    </a>
+    <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    <nav id="nav" class="nav">
+      <a href="/" data-link data-i18n="nav_home">Trang chủ</a>
+      <a href="/gioi-thieu" data-link data-i18n="nav_about">Giới thiệu</a>
+      <div class="dd">
+        <a href="/san-pham" data-link data-i18n="nav_products">Sản phẩm</a>
+        <div class="dd-menu">
+          <a href="/san-pham?loai=rua-tay" data-link data-i18n="cat_rua-tay">Nước rửa tay</a>
+          <a href="/san-pham?loai=lau-san" data-link data-i18n="cat_lau-san">Nước lau sàn</a>
+          <a href="/san-pham?loai=giat" data-link data-i18n="cat_giat">Nước giặt</a>
+          <a href="/san-pham?loai=rua-chen" data-link data-i18n="cat_rua-chen">Nước rửa chén</a>
+        </div>
+      </div>
+      <a href="/cam-nang" data-link data-i18n="nav_blog">Cẩm nang sống xanh</a>
+      <a href="/lien-he" data-link data-i18n="nav_contact">Liên hệ</a>
+    </nav>
+    <div class="tools">
+      <div class="search">
+        <input id="q" type="search" autocomplete="off" data-i18n-ph="search_ph" placeholder="Tìm sản phẩm…" aria-label="Search">
+        <div id="results" class="results" hidden></div>
+      </div>
+      <div class="lang" role="group" aria-label="Language">
+        <button data-lang="vi" class="on">VIE</button><span>|</span><button data-lang="en">ENG</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="app" tabindex="-1"></main>
+
+<footer class="site-footer">
+  <div class="wrap grid">
+    <div>
+      <div class="logo foot-logo"><span>CÔNG NGHỆ <b>HÓA XANH</b></span></div>
+      <p id="f-name" class="muted"></p>
+      <p id="f-field" class="muted small"></p>
+    </div>
+    <div>
+      <h4 data-i18n="nav_contact">Liên hệ</h4>
+      <p id="f-phone"></p><p id="f-support"></p><p id="f-address" class="small"></p>
+    </div>
+    <div>
+      <h4 data-i18n="f_links">Liên kết</h4>
+      <p><a href="/gioi-thieu" data-link data-i18n="nav_about">Giới thiệu</a></p>
+      <p><a href="/san-pham" data-link data-i18n="nav_products">Sản phẩm</a></p>
+      <p><a href="/cam-nang" data-link data-i18n="nav_blog">Cẩm nang sống xanh</a></p>
+    </div>
+  </div>
+  <div class="wrap copy small">© <span id="yr"></span> CÔNG TY TNHH CÔNG NGHỆ HÓA XANH. <span data-i18n="rights">Bảo lưu mọi quyền.</span></div>
+</footer>
+<script src="/app.js"></script>
+</body>
+</html>
