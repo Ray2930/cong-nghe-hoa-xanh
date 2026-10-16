@@ -165,3 +165,24 @@ section.alt{background:var(--mint)}
 }
 
 .logo-img{width:40px;height:40px;object-fit:contain;flex:none}
+
+/* header fit fix */
+.site-header .wrap{max-width:1360px}
+.bar{gap:14px;flex-wrap:nowrap}
+.logo{font-size:.95rem;letter-spacing:.02em;flex:none}
+.nav{gap:0;flex:1;justify-content:center;margin-left:0;min-width:0}
+.nav>a,.dd>a{white-space:nowrap;padding:10px 11px;font-size:.95rem}
+.tools{flex:none;gap:10px}
+.search input{width:150px}
+.search input:focus{width:190px}
+.lang button{white-space:nowrap}
+@media (max-width:1320px){
+  .burger{display:flex;margin-left:auto}
+  .nav{position:absolute;top:100%;left:0;right:0;background:var(--cream);border-bottom:1px solid var(--line);flex-direction:column;align-items:stretch;justify-content:flex-start;padding:12px 20px 18px;display:none;gap:2px;flex:none}
+  .nav.open{display:flex}
+  .nav>a,.dd>a{white-space:normal;font-size:1rem;padding:11px 12px}
+  .dd-menu{position:static;display:block;border:0;box-shadow:none;background:transparent;padding:0 0 0 14px}
+  .bar{flex-wrap:wrap;padding:8px 20px}
+  .tools{order:3;width:100%;justify-content:space-between}
+  .search{flex:1}.search input,.search input:focus{width:100%}
+}
