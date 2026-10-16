@@ -128,8 +128,8 @@ const db = {
   settings: {
     heroImage: IMG.hero, aboutImage: IMG.about,
     heroTitle: t('Công Nghệ An Lành – Sống Xanh Mỗi Ngày', 'Gentle Technology – Green Living Every Day'),
-    heroDesc: t('Giải pháp chất tẩy rửa sinh học an toàn tuyệt đối cho làn da và thân thiện với hệ sinh thái gia đình bạn.',
-      'Bio-based cleaning solutions that are gentle on your skin and friendly to your family\'s ecosystem.'),
+    heroDesc: t('Giải pháp chất tẩy rửa an toàn cho làn da và thân thiện với gia đình bạn.',
+      'Cleaning solutions that are safe for your skin and friendly to your family.'),
     colors: { forest: '#1f4d36', leaf: '#4caf6d', mint: '#dff3e6', cream: '#fbf8ef' }
   },
   products, posts
